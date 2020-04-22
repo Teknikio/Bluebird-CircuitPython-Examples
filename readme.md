@@ -1,17 +1,17 @@
 Bluebird Circuit Python Examples
 ================================
 
-installation
+Installation
 ------------
 
 You need to install CircuitPython following [this tutorial(https://learn.adafruit.com/welcome-to-circuitpython/what-is-circuitpython)
 
 We also recommand to use Mu Editor which allow you a good serial console.
 
-Download the Bluebird Circuit Python file
+Download the Bluebird CircuitPython file
 -----------------------------------------
 
-You can download the UF2 file for the bluebird on this [circuitpython's website](https://circuitpython.org/board/teknikio_bluebird/)
+You can download the UF2 file for the bluebird on this [CircuitPython's website](https://circuitpython.org/board/teknikio_bluebird/)
 
 
 Using your Bluebird
@@ -22,15 +22,19 @@ Using your Bluebird
 
 * The board should now appear under external drives on your computer as “NRFboot”.
 
-* Drag the file downloaded on the [circuitpython's website](https://circuitpython.org/board/teknikio_bluebird/) onto this device, it will disappear and then reappear as “CIRCUITPY”
+![CircuitPy](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_circuitpy.JPG)
+
+* Drag the file downloaded on the [CircuitPython's website](https://circuitpython.org/board/teknikio_bluebird/) onto this device, it will disappear and then reappear as “CIRCUITPY”
 
 * You will also need to load libraries for the peripherals on your board. One of the libraries is available on the [reposit](https://github.com/Teknikio/Bluebird-CircuitPython-Examples)
 
 * Click on "Clone or Download"
 
+![CloneOrDownload](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_download.JPG)
+
 * Then click on "Download Zip"
+![DownloadZip](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_download_2.JPG)
 
-* Extract it where you want on your computer. You can now copy the file content to the file code.py onto the "CIRCUITPY" device.
-
+* Extract it where you want on your computer. You can now copy the file content from the archive to the file "code.py" onto the "CIRCUITPY" device.
 
 **NOTE:** If you want to use the accelerometer's example, you have to copy the file the file named “teknikio_ICM20600.py” contained in the archive’s library folder to the CIRCUITPY’s lib folder
