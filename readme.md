@@ -33,7 +33,7 @@ Using your Bluebird
 ![CloneOrDownload](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_download.JPG)
 
 * Then click on "Download Zip"
-![DownloadZip](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_download_2.JPG)
+![DownloadZip](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_download_2.jpg)
 
 * Extract it where you want on your computer. You can now copy the file content from the archive to the file "code.py" onto the "CIRCUITPY" device.
 
