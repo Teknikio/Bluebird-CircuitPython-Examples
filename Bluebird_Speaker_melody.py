@@ -15,60 +15,76 @@ time_delay=0.1
 brightness = 0.1
 print("NEOPIXEL test: START")
 
-_audio_out = audiopwmio.PWMAudioOut
+class tk_Audiotest:
 
-def _sine_sample(length):
+    def __init__(self):
+        self._audio_out = audiopwmio.PWMAudioOut
+        self._sample = None
+        self._sine_wave = None
+        self._sine_wave_sample = None
+
+    @staticmethod
+    def _sine_sample(length):
         tone_volume = (2 ** 15) - 1
         shift = 2 ** 15
         for i in range(length):
             yield int(tone_volume * math.sin(2 * math.pi * (i / length)) + shift)
 
-NOTE_C5 = 523
-NOTE_D5 = 587
-NOTE_E5 = 659
-NOTE_F5 = 698
-NOTE_G5 = 784
-NOTE_A5 = 880
-NOTE_B5 = 988
-NOTE_C6 = 1047
+    def _generate_sample(self, length=100):
+        if self._sample is not None:
+            return
+        self._sine_wave = array.array("H", self._sine_sample(length))
+        self._sample = self._audio_out(board.SPEAKER)  # pylint: disable=not-callable
+        self._sine_wave_sample = audiocore.RawSample(self._sine_wave)
 
-melody = [NOTE_C5, NOTE_D5, NOTE_E5, NOTE_F5,  NOTE_G5, NOTE_A5, NOTE_B5, NOTE_C6 ]
+    def start_tone(self, frequency):
+        length = 100
+        if length * frequency > 350000:
+            length = 350000
+        self._generate_sample(length)
+        # Start playing a tone of the specified frequency (hz).
+        self._sine_wave_sample.sample_rate = int(len(self._sine_wave) * frequency)
+        print (len(self._sine_wave) * frequency)
+        if not self._sample.playing:
+            self._sample.play(self._sine_wave_sample, loop=True)
+
+
+    def stop_tone(self):
+        # Stop playing any tones.
+        if self._sample is not None and self._sample.playing:
+            self._sample.stop()
+            self._sample.deinit()
+            self._sample = None
+
+    def play_tone(self, frequency, duration):
+        # Play a tone of the specified frequency (hz).
+        self.start_tone(frequency)
+        time.sleep(duration)
+        self.stop_tone()
+
+
+
+NOTE_E6 = 1319
+NOTE_DS6 = 1245
+NOTE_B5 = 988
+NOTE_D6 = 1175
+NOTE_C6 = 1047
+NOTE_A5 = 880
+
+
+melody = [NOTE_E6, NOTE_DS6, NOTE_E6, NOTE_DS6,  NOTE_E6, NOTE_B5, NOTE_D6, NOTE_C6, NOTE_A5]
+
+tempo = [12, 12, 12, 12, 12, 10, 12, 12, 6 ]
 
 #dac = audiopwmio.PWMAudioOut(board.SPEAKER)
 
 print(melody)
+
+tek_Audiotest = tk_Audiotest()
 length = 100
-_sine_wave = array.array("H", _sine_sample(length))
-print(_sine_wave)
-time.sleep(1)
-    #play_tone(melody[i], 1)
+
 for i in range(len(melody)):
-    #start_tone(melody[i])
-    length = 100
-    if length * melody[i] > 350000:
-        length = 350000 //melody[i]
-    #_generate_sample(length)
-        
-    _sample = _audio_out(board.SPEAKER)  # pylint: disable=not-callable
-    _sine_wave_sample = audiocore.RawSample(_sine_wave)
-        # Start playing a tone of the specified frequency (hz).
-        #print("Len sine wave",_sine_wave )
-    print("Len sine wave",len(_sine_wave) * melody[i] )
-    if i+1 <len(melody):
-        print("Len sine wave",len(_sine_wave) * melody[i+1] )
-    if int(len(_sine_wave)*melody[i]) > 62500:
-        _sine_wave_sample.sample_rate = 62500
-    else:
-        _sine_wave_sample.sample_rate = int((len(_sine_wave)*melody[i]))
-    if not _sample.playing:
-        _sample.play(_sine_wave_sample, loop=False)
-    time.sleep(1)
-        #stop_tone()
-    if _sample is not None and _sample.playing:
-        _sample.stop()
-        _sample.deinit()
-        _sample = None
-    print("Count passage : ",i)
+    tek_Audiotest.play_tone(melody[i],tempo[i]/50)
 
 
 
@@ -120,9 +136,8 @@ while True:
     time.sleep(time_delay)
 
     print("Bluebird Speaker")
-    
-    
-    
-    
 
-    
+
+
+
+
