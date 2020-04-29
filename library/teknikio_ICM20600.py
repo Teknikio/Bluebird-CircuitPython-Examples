@@ -79,174 +79,309 @@ ICM20600_I2C_ADDR2             = 0x69
 
 class ICM20600:
 
-		def __init__(self):
-			self.SCL = 0
-			self.SDA = 0
+    def __init__(self):
+        self.SCL = 0
+        self.SDA = 0
+        
 
-		def __init__(SCL,SDA):
-			self.SCL = SCL
-			self.SDA = SDA
+    def __init__(self,SCL,SDA):
+        self.SCL = SCL
+        self.SDA = SDA
 
-    def writeRegister(registeraddress,registervalue):
-            self.i2c.writeto(ICM20600_I2C_ADDR1, bytes([registeraddress,registervalue])) # Lecture du registre PWR_MGMT
+    def start(self):
+        result = bytearray(1)
+        self.i2c = busio.I2C(self.SCL, self.SDA)
 
+        while not self.i2c.try_lock():
+            pass
+        self.initialisationRegisters()
+    
 
-        def readRegister(registeraddress,bytenumber):
-            result = bytearray(bytenumber)
-            i2c.writeto(ICM20600_I2C_ADDR1, bytes([registeraddress])) # Lecture du registre PWR_MGMT
-            i2c.readfrom_into(ICM20600_I2C_ADDR1, result)  # Lecture du registre
-            return result
+    def writeRegister(self, registeraddress, registervalue) :
+        self.i2c.writeto(ICM20600_I2C_ADDR1, bytes([registeraddress,registervalue])) # Lecture du registre PWR_MGMT
 
-		def start(self):
-			result = bytearray(1)
-			self.i2c = busio.I2C(self.SCL, self.SDA)
+    def readRegister(self,registeraddress,bytenumber):
+        result = bytearray(bytenumber)
+        self.i2c.writeto(ICM20600_I2C_ADDR1, bytes([registeraddress])) # Lecture du registre PWR_MGMT
+        self.i2c.readfrom_into(ICM20600_I2C_ADDR1, result)  # Lecture du registre
+        return result
 
-        def initialisationRegisters(self):
-    		self.writeRegister(ICM20600_PWR_MGMT_1,0x70)
-    		self.writeRegister(ICM20600_CONFIG,0x00)
-    		self.writeRegister(ICM20600_FIFO_EN,0x00)
+    def initialisationRegisters(self):
+        self.writeRegister(ICM20600_PWR_MGMT_1,0x30) # Reset the ICM20600
+        self.writeRegister(ICM20600_CONFIG,0x00)  # Set Config = 0 
+        self.writeRegister(ICM20600_FIFO_EN,0x00) # Set FIFO disabled
+        self.writeRegister(ICM20600_ACCEL_INTEL_CTRL,0x02) #Set output limit
+        # Set power mode to 6Axis Low Power
+        
+        self.setPowerMode("ICM_6AXIS_LOW_POWER")
+        # Set Gyroscope scale range to 2k DPS
 
-    		# Set power mode to 6Axis Low Power
-    		self.writeRegister(ICM20600_ACCEL_INTEL_CTRL,0x02)
-    		result = self.readRegister(ICM20600_PWR_MGMT_1,1)
-    		data_pwr1 = (result[0] & 0x8f)
-    		result = self.readRegister(ICM20600_GYRO_LP_MODE_CFG,1)
-    		data_gyro_lp = result[0] & 0x7f
-			
-    		data_pwr1 |= 0x00;
-			data_pwr2 = 0x3f;
-			data_gyro_lp |= 0x80;
+        self.setGyroScaleRange("RANGE_2K_DPS");
+        self.setGyroOutputDataRate("GYRO_RATE_1K_BW_176");
+        self.setGyroAverageSample("GYRO_AVERAGE_1");
+        # Set Gyroscope average sample to 4
 
-    		self.writeRegister(ICM20600_PWR_MGMT_1,data_pwr1)
-    		self.writeRegister(ICM20600_PWR_MGMT_2,data_pwr2)
-    		self.writeRegister(ICM20600_GYRO_LP_MODE_CFG,data_gyro_lp)
-
-    		# Set Gyroscope scale range to 2k DPS
-
-    		result = self.readRegister(ICM20600_GYRO_CONFIG,1)
-    		data = (result[0] & 0xe7)
-
-    		data |= 0x18
-			self.writeRegister(ICM20600_GYRO_CONFIG,data)
-
-			# Set Gyroscope average sample to 1 
-
-			result = self.readRegister(ICM20600_GYRO_LP_MODE_CFG,1)
-    		data = (result[0] & 0x8f)
-
-    		data |= 0x00
-			self.writeRegister(ICM20600_GYRO_LP_MODE_CFG,data)
-
-			# Set Accelerometer scale range to 16 G
-			
-			result = self.readRegister(ICM20600_ACCEL_CONFIG,1)
-    		data = (result[0] & 0xe7)
-
-    		data |= 0x18
-			self.writeRegister(ICM20600_ACCEL_CONFIG,data)
-
-			# Set Accelerometer output data rate to 1K BW 420
-			
-			result = self.readRegister(ICM20600_ACCEL_CONFIG2,1)
-    		data = (result[0] & 0xf0)
-
-    		data |= 0x08
-			self.writeRegister(ICM20600_ACCEL_CONFIG2,data)
-			
-			# Set Accelerometer average sample to 4
-			
-			result = self.readRegister(ICM20600_ACCEL_CONFIG2,1)
-    		data = result[0]
-
-    		data |= 0x00
-			self.writeRegister(ICM20600_ACCEL_CONFIG2,data)
+        self.setAccScaleRange("RANGE_16G");
+        self.setAccOutputDataRate("ACC_RATE_1K_BW_420");
+        self.setAccAverageSample("ACC_AVERAGE_4");
 
 
+    def readAccelerationX(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_ACCEL_XOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._acc_scale )/65536
+        return result_int
+
+    def readAccelerationY(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_ACCEL_YOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._acc_scale )/65536
+        return result_int
+
+    def readAccelerationZ(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_ACCEL_ZOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._acc_scale )/65536
+        return result_int
+
+    def readTemperature(self):
+        result = bytearray(2)
+        result = self.readRegister(ICM20600_TEMP_OUT_H,2)
+        if result[0] > 127 :
+            result0 = result[0] - 256
+            result1 = -result[1]
+        else:
+            result0 = result[0]
+            result1 = result[1]
+        result_int_temp = ((result0*256 + result1)/327)+25
+        return result_int_temp
+
+    def readGyroscopeX(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_GYRO_XOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._gyro_scale )/65536
+        return result_int
+
+    def readGyroscopeY(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_GYRO_YOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._gyro_scale )/65536
+        return result_int
+
+    def readGyroscopeZ(self):
+        result_accel = bytearray(2)
+        result_accel = self.readRegister(ICM20600_GYRO_ZOUT_H,2)
+        if result_accel[0] > 127 :
+            result_accel0 = result_accel[0] - 256
+            result_accel1 = -result_accel[1]
+        else:
+            result_accel0 = result_accel[0]
+            result_accel1 = result_accel[1]
+        result_int = ((result_accel0 *256 + result_accel1)*self._gyro_scale )/65536
+        return result_int
+
+    def setGyroAverageSample(self,sampleType):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_GYRO_LP_MODE_CFG,1)
+        data = (result[0] & 0x8f)
+
+        if sampleType == "GYRO_AVERAGE_1":
+            data |= 0x00
+        elif sampleType == "GYRO_AVERAGE_2":
+            data |= 0x10
+        elif sampleType == "GYRO_AVERAGE_4":
+            data |= 0x20
+        elif sampleType == "GYRO_AVERAGE_8":
+            data |= 0x30
+        elif sampleType == "GYRO_AVERAGE_16":
+            data |= 0x40
+        elif sampleType == "GYRO_AVERAGE_32":
+            data |= 0x50
+        elif sampleType == "GYRO_AVERAGE_64":
+            data |= 0x60
+        elif sampleType == "GYRO_AVERAGE_128":
+            data |= 0x70
+        else:
+            data |= 0x00
+        self.writeRegister(ICM20600_GYRO_LP_MODE_CFG,data)
+
+    def setGyroScaleRange(self,scaleType):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_GYRO_CONFIG,1)
+        data = (result[0] & 0xe7)
+
+        if scaleType == "RANGE_250_DPS":
+            data |= 0x00
+            self._gyro_scale = 250
+        elif scaleType == "RANGE_500_DPS":
+            data |= 0x08
+            self._gyro_scale = 1000
+        elif scaleType == "RANGE_1K_DPS":
+            data |= 0x10
+            self._gyro_scale = 2000
+        elif scaleType == "RANGE_2K_DPS":
+            data |= 0x18
+            self._gyro_scale = 4000
+        else:
+            data |= 0x00
+            self._gyro_scale = 0
+        self.writeRegister(ICM20600_GYRO_CONFIG,data)      
+
+    def setGyroOutputDataRate(self,dataRate):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_CONFIG,1)
+        data = (result[0] & 0xf8)
+
+        if dataRate == "GYRO_RATE_8K_BW_3281":
+            data |= 0x07
+        elif dataRate == "GYRO_RATE_8K_BW_250":
+            data |= 0x00
+        elif dataRate == "GYRO_RATE_1K_BW_176":
+            data |= 0x01
+        elif dataRate == "GYRO_RATE_1K_BW_92":
+            data |= 0x02
+        elif dataRate == "GYRO_RATE_1K_BW_41":
+            data |= 0x03
+        elif dataRate == "GYRO_RATE_1K_BW_20":
+            data |= 0x04
+        elif dataRate == "GYRO_RATE_1K_BW_10":
+            data |= 0x05
+        elif dataRate == "GYRO_RATE_1K_BW_5":
+            data |= 0x06
+        else:
+            data |= 0x07
+        self.writeRegister(ICM20600_CONFIG,data)
+
+    def setPowerMode(self, powerMode):
+        data_pwr2 = 0x00
+        result = self.readRegister(ICM20600_PWR_MGMT_1,1) # Read PWR MGMT 1 register
+        data_pwr1 = (result[0] & 0x8f)
+        result = self.readRegister(ICM20600_GYRO_LP_MODE_CFG,1)
+        data_gyro_lp = result[0] & 0x7f
+            
 
 
+        if powerMode == "ICM_SLEEP_MODE":
+            data_pwr1 |= 0x40          # set 0b01000000
+        elif powerMode == "ICM_STANDYBY_MODE":
+            data_pwr1 |= 0x10          # set 0b00010000
+            data_pwr2 = 0x38           # 0x00111000 disable acc
+        elif powerMode == "ICM_ACC_LOW_POWER":
+            data_pwr1 |= 0x20          # set bit5 0b00100000
+            data_pwr2 = 0x07           #0x00000111 disable gyro
+        elif powerMode == "ICM_ACC_LOW_NOISE":
+            data_pwr1 |= 0x00
+            data_pwr2 = 0x07           ##0x00000111 disable gyro
+        elif powerMode == "ICM_GYRO_LOW_POWER":
+            data_pwr1 |= 0x00          # dont set bit5 0b00000000
+            data_pwr2 = 0x38           # 0x00111000 disable acc
+            data_gyro_lp |= 0x80
+        elif powerMode == "ICM_GYRO_LOW_NOISE":
+            data_pwr1 |= 0x00
+            data_pwr2 = 0x38           # 0x00111000 disable acc
+        elif powerMode == "ICM_6AXIS_LOW_POWER":
+            data_pwr1 |= 0x00          # dont set bit5 0b00100000
+            data_gyro_lp |= 0x80
+        elif powerMode == "ICM_6AXIS_LOW_NOISE":
+            data_pwr1 |= 0x00;
+        else:
+            data_pwr1 |= 0x00;
 
-		
+        self.writeRegister(ICM20600_PWR_MGMT_1,data_pwr1)
+        self.writeRegister(ICM20600_PWR_MGMT_2,data_pwr2)
+        self.writeRegister(ICM20600_GYRO_LP_MODE_CFG,data_gyro_lp)
 
-		def readAccelerationX():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_ACCEL_XOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
 
-		def readAccelerationY():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_ACCEL_YOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
+    def setAccScaleRange(self,scaleType):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_ACCEL_CONFIG,1)
+        data = (result[0] & 0xe7)
 
-    	def readAccelerationZ():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_ACCEL_ZOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
+        if scaleType == "RANGE_2G":
+            data |= 0x00
+            self._acc_scale = 4000
+        elif scaleType == "RANGE_4G":
+            data |= 0x08
+            self._acc_scale = 8000
+        elif scaleType == "RANGE_8G":
+            data |= 0x10
+            self._acc_scale = 16000
+        elif scaleType == "RANGE_16G":
+            data |= 0x18
+            self._acc_scale = 32000
+        else:
+            data |= 0x00
+            self._acc_scale = 0
+        self.writeRegister(ICM20600_ACCEL_CONFIG,data)      
 
-    	def readTemperature():
-    		result = bytearray(2)
-			result = self.readRegister(ICM20600_TEMP_OUT_H,2)
-			if result[0] > 127 :
-        		result0 = result[0] - 256
-        		result1 = -result[1]
-    		else:
-        		result0 = result[0]
-        		result1 = result[1]
-    		result_int_temp = ((result0*256 + result1)/327)+25
+    def setAccAverageSample(self,sampleType):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_ACCEL_CONFIG2,1)
+        data = (result[0] & 0xcf)
 
-    	def readGyroscopeX():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_GYRO_XOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
+        if sampleType == "ACC_AVERAGE_4":
+            data |= 0x00
+        elif sampleType == "ACC_AVERAGE_8":
+            data |= 0x10
+        elif sampleType == "ACC_AVERAGE_16":
+            data |= 0x20
+        elif sampleType == "ACC_AVERAGE_32":
+            data |= 0x30
+        else:
+            data |= 0x00
+        self.writeRegister(ICM20600_ACCEL_CONFIG2,data)
 
-		def readGyroscopeY():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_GYRO_YOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
+    def setAccOutputDataRate(self,dataRate):
+        result = bytearray(1)
+        result = self.readRegister(ICM20600_ACCEL_CONFIG2,1)
+        data = (result[0] & 0xf0)
 
-    	def readGyroscopeZ():
-			result_accel = bytearray(2)
-			result_accel = self.readRegister(ICM20600_GYRO_ZOUT_H,2)
-    		if result_accel[0] > 127 :
-        		result_accel0 = result_accel[0] - 256
-        		result_accel1 = -result_accel[1]
-    		else:
-        		result_accel0 = result_accel[0]
-        		result_accel1 = result_accel[1]
-    		result_int = ((result_accel0 *256 + result_accel1)*32768 )/65536
-    		return result_int
-
+        if dataRate == "ACC_RATE_4K_BW_1046":
+            data |= 0x08
+        elif dataRate == "ACC_RATE_1K_BW_420":
+            data |= 0x07
+        elif dataRate == "ACC_RATE_1K_BW_218":
+            data |= 0x01
+        elif dataRate == "ACC_RATE_1K_BW_99":
+            data |= 0x02
+        elif dataRate == "ACC_RATE_1K_BW_44":
+            data |= 0x03
+        elif dataRate == "ACC_RATE_1K_BW_21":
+            data |= 0x04
+        elif dataRate == "ACC_RATE_1K_BW_10":
+            data |= 0x05
+        elif dataRate == "ACC_RATE_1K_BW_5":
+            data |= 0x06
+        else:
+            data |= 0x08
+        self.writeRegister(ICM20600_ACCEL_CONFIG2,data)

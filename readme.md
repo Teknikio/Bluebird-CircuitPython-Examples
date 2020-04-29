@@ -37,4 +37,4 @@ Using your Bluebird
 
 * Extract it where you want on your computer. You can now copy the file content from the archive to the file "code.py" onto the "CIRCUITPY" device.
 
-**NOTE:** If you want to use the accelerometer's example, you have to copy the file the file named “teknikio_ICM20600.py” contained in the archive’s library folder to the CIRCUITPY’s lib folder
+**NOTE:** If you want to use the accelerometer's example, you have to copy the file the file named “teknikio_ICM20600.py” and the folders "adafruit_bus_device" and "adafruit_register" contained in the archive’s library folder to the CIRCUITPY’s lib folder
