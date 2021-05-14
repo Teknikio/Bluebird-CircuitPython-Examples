@@ -20,7 +20,7 @@ Using your Bluebird
 
 * Make sure your board is in serial mode, the onboard neopixel should be bright green. If it is not press the reset button once to reset the board, and then press twice to enter serial mode. 
 
-* The board should now appear under external drives on your computer as “NRFboot”.
+* The board should now appear under external drives on your computer as “TEKBOOT”.
 
 ![CircuitPy](https://github.com/Teknikio/Teknikio.github.io/blob/master/images/capture_circuit_python_example_circuitpy.JPG)
 
